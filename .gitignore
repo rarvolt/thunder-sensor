@@ -1,0 +1,4 @@
+build/
+build.log
+cmake-build-debug-xtensa/
+sdkconfig.old

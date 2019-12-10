@@ -1,0 +1,87 @@
+menu "Device Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "2.4G-Vectra-WiFi-AB1636"
+        help
+            SSID (network name) for the device to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "108F8943BA44D514"
+        help
+            WiFi password (WPA or WPA2) for the device to use.
+
+    config BROKER_URL
+        string "Broker URL"
+        default "mqtt://192.168.0.20:1883"
+        help
+            URL of the broker to connect to
+
+    config UART_BAUDRATE
+        int "UART Baudrate"
+        default 115200
+        help
+            UART speed
+
+    config I2C_SCL_PIN
+        int "I2C SCL Pin number"
+        default 5
+
+    config I2C_SDA_PIN
+        int "I2C SDA Pin number"
+        default 4
+
+    config I2C_INT_PULLUP
+        bool "Internal pullup on I2C pins"
+        default n
+
+    config AS3935_ENABLED
+        bool "Enable AS3935 sensor"
+        default y
+
+    if AS3935_ENABLED
+
+    config AS3935_IRQ_PIN
+        int "AS3935 Interrupt pin number"
+        default 14
+
+    endif
+
+    config BME280_ENABLED
+        bool "Enable BME280 sensor"
+        default y
+
+    config TSL2561_ENABLED
+        bool "Enable TSL2561 sensor"
+        default y
+
+    config I2C_GPIO_ENABLED
+        bool "Enable GPIO over I2C"
+        default y
+
+    if I2C_GPIO_ENABLED
+
+    menu "GPIO configuration"
+
+        config IO_T1_PIN
+        int "Transistor output 1 pin"
+        default 0
+
+        config IO_T2_PIN
+        int "Transistor output 2 pin"
+        default 1
+
+        config IO_RL1_PIN
+        int "Relay output 1 pin"
+        default 2
+
+        config IO_RL2_PIN
+        int "Relay output 2 pin"
+        default 3
+
+    endmenu # GPIO configuration
+
+    endif # I2C_GPIO_ENABLED
+
+endmenu
