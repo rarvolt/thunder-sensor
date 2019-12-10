@@ -1,0 +1,9 @@
+[submodule "components/as3935"]
+	path = components/as3935
+	url = git@github.com:rarvolt/as3935-esp-rtos.git
+[submodule "components/bme280"]
+	path = components/bme280
+	url = git@github.com:rarvolt/bme280-esp-rtos.git
+[submodule "components/tsl2561"]
+	path = components/tsl2561
+	url = git@github.com:rarvolt/tsl2561-esp-rtos.git
