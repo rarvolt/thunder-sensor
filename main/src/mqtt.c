@@ -99,7 +99,8 @@ MQTT_Client_t mqtt_init()
     esp_mqtt_client_config_t config = {
             .uri = CONFIG_BROKER_URL,
             .event_handle = _mqtt_event_handler,
-            .user_context = client
+            .user_context = client,
+            .buffer_size = 4096
     };
 
     client->esp_client = esp_mqtt_client_init(&config);

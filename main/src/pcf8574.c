@@ -43,7 +43,7 @@ void pcf8574_write_byte(PCF8574_handle_t pcf, uint8_t data)
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     ESP_ERROR_CHECK(i2c_master_start(cmd))
     ESP_ERROR_CHECK(i2c_master_write_byte(cmd, PCF_WRITE(pcf->addr), ACK_CHECK_EN))
-    ESP_ERROR_CHECK(i2c_master_write_byte(cmd, data, ACK_CHECK_EN))
+    ESP_ERROR_CHECK(i2c_master_write_byte(cmd, data, ACK_CHECK_DIS))
     ESP_ERROR_CHECK(i2c_master_stop(cmd))
     ESP_ERROR_CHECK(i2c_master_cmd_begin(PCF_I2C_PORT, cmd, 100 / portTICK_RATE_MS))
     i2c_cmd_link_delete(cmd);

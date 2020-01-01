@@ -34,7 +34,7 @@ typedef struct
     float humidity;
     float pressure;
     uint32_t luminosity;
-    uint32_t telemetry_pub_interval_s;
+    uint32_t telemetry_pub_interval_ms;
 } APP_telemetry_t;
 
 typedef struct
@@ -52,7 +52,7 @@ static APP_telemetry_t telemetry = {
         .humidity = 0.0f,
         .pressure = 0.0f,
         .luminosity = 0,
-        .telemetry_pub_interval_s = 5
+        .telemetry_pub_interval_ms = 5000
 };
 static APP_io_t io = {
         .t1 = IO_OFF,
@@ -63,7 +63,7 @@ static APP_io_t io = {
 
 void main_task(void *pv_param);
 #ifdef CONFIG_I2C_GPIO_ENABLED
-void gpio_task(void *pv_param);
+void gpio_task(void __unused *pv_param);
 #endif
 #ifdef CONFIG_AS3935_ENABLED
 void as3935_task(void *pv_param);
@@ -119,7 +119,7 @@ void app_main()
     xTaskCreate(&main_task, "main_task", 2084, NULL, 3, NULL);
 }
 
-void main_task(void *pv_param)
+void main_task(void __unused *pv_param)
 {
 #if (CONFIG_BME280_ENABLED | CONFIG_TSL2561_ENABLED)
     char msg_buf[MSG_BUF_SIZE];
@@ -144,29 +144,29 @@ void main_task(void *pv_param)
     config.qos = 1;
     config.callback = mqtt_cmd_set_telemetry_interval_cb;
     config.context.data = telem_interval_pub;
-    MQTT_Subscriber_t cmd_set_telemetry_interval_sub = mqtt_sub_create(mqtt, &config);
+    MQTT_Subscriber_t __unused cmd_set_telemetry_interval_sub = mqtt_sub_create(mqtt, &config);
 
     config.callback = mqtt_cmd_io_cb;
     config.context.data = NULL;
     config.topic = "tdesp/cmd/t1";
     config.context.value = 1;
-    MQTT_Subscriber_t cmd_io_t1_sub = mqtt_sub_create(mqtt, &config);
+    MQTT_Subscriber_t __unused cmd_io_t1_sub = mqtt_sub_create(mqtt, &config);
 
     config.topic = "tdesp/cmd/t2";
     config.context.value = 2;
-    MQTT_Subscriber_t cmd_io_t2_sub = mqtt_sub_create(mqtt, &config);
+    MQTT_Subscriber_t __unused cmd_io_t2_sub = mqtt_sub_create(mqtt, &config);
 
     config.topic = "tdesp/cmd/rl1";
     config.context.value = 3;
-    MQTT_Subscriber_t cmd_io_rl1_sub = mqtt_sub_create(mqtt, &config);
+    MQTT_Subscriber_t __unused cmd_io_rl1_sub = mqtt_sub_create(mqtt, &config);
 
     config.topic = "tdesp/cmd/rl2";
     config.context.value = 4;
-    MQTT_Subscriber_t cmd_io_rl2_sub = mqtt_sub_create(mqtt, &config);
+    MQTT_Subscriber_t __unused cmd_io_rl2_sub = mqtt_sub_create(mqtt, &config);
 
     while(true)
     {
-        vTaskDelay((telemetry.telemetry_pub_interval_s * 1000) / portTICK_RATE_MS);
+        vTaskDelay(telemetry.telemetry_pub_interval_ms / portTICK_RATE_MS);
 
 #ifdef CONFIG_BME280_ENABLED
         PUB_F(temp_pub, msg_buf, telemetry.temperature);
@@ -193,12 +193,12 @@ esp_err_t mqtt_cmd_set_telemetry_interval_cb(MQTT_callback_event_t *event)
 
     if (event->data_len == 0 || value == 0)
     {
-        PUB_U(telem_interval_pub, buf, telemetry.telemetry_pub_interval_s);
+        PUB_U(telem_interval_pub, buf, telemetry.telemetry_pub_interval_ms);
     }
     else if (value > 0)
     {
         ESP_LOGI(MAIN_TAG, "Updating telemetry interval to: %u", value);
-        telemetry.telemetry_pub_interval_s = value;
+        telemetry.telemetry_pub_interval_ms = value;
     }
     else
     {
@@ -214,6 +214,7 @@ esp_err_t mqtt_cmd_io_cb(MQTT_callback_event_t *event)
     char *msg = calloc(event->data_len + 1, sizeof(char));
     strncpy(msg, event->data, event->data_len);
     value = atoi(msg);
+    free(msg);
 
     ESP_LOGI(MAIN_TAG, "Got CMD IO, topic: '%s', context: '%d', value: '%d'",
             event->topic, event->context.value, value);
@@ -237,6 +238,7 @@ esp_err_t mqtt_cmd_io_cb(MQTT_callback_event_t *event)
             break;
         case 4:
             io.rl2 = value ? IO_ON : IO_OFF;
+            break;
         default:
             ESP_LOGW(MAIN_TAG, "Unknown context value: %d", event->context.value);
             break;
@@ -247,7 +249,7 @@ esp_err_t mqtt_cmd_io_cb(MQTT_callback_event_t *event)
 
 #ifdef CONFIG_I2C_GPIO_ENABLED
 
-void gpio_task(void *pv_param)
+void gpio_task(void __unused *pv_param)
 {
     PCF8574_handle_t pcf = pcf8574_init(PCF8574_ADDR_000);
     APP_io_t prev_io = io;
@@ -301,7 +303,7 @@ void _as3935_irq_handler(void *params);
 
 bool as3935_irq_triggered = false;
 
-void as3935_task(void *pv_param)
+void as3935_task(void __unused *pv_param)
 {
     ESP_LOGI(MAIN_TAG, "Initializing...");
     gpio_isr_handler_add(CONFIG_AS3935_IRQ_PIN, _as3935_irq_handler, NULL);
@@ -355,7 +357,7 @@ void _as3935_print_registers(AS3935_handle_t as)
     ESP_LOGI(MAIN_TAG, "Watchdog threshold is: %d", wdth);
 }
 
-void _as3935_irq_handler(void *params)
+void _as3935_irq_handler(void __unused *params)
 {
     as3935_irq_triggered = true;
 }
@@ -420,11 +422,11 @@ esp_err_t _setup_i2c()
 {
     esp_err_t ret;
     ret = i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER);
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK(ret)
 
     i2c_config_t conf = {
             .mode = I2C_MODE_MASTER,
-            .clk_stretch_tick = 300,
+            .clk_stretch_tick = 500,
             .scl_io_num = CONFIG_I2C_SCL_PIN,
             .sda_io_num = CONFIG_I2C_SDA_PIN,
 #ifdef CONFIG_I2C_INT_PULLUP
@@ -437,6 +439,6 @@ esp_err_t _setup_i2c()
     };
 
     ret = i2c_param_config(I2C_NUM_0, &conf);
-    ESP_ERROR_CHECK(ret);
+    ESP_ERROR_CHECK(ret)
     return ESP_OK;
 }
